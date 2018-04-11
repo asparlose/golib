@@ -60,11 +60,36 @@ func ChildOf(name string) FileFilter {
 	}
 }
 
-func DescendantsOf(name string) FileFilter {
-	if strings.HasSuffix(name, "/") {
-		return Match(name + "*")
+func split(path string) []string {
+	p := path
+	a := make([]string, 0)
+	for {
+		d, f := filepath.Split(p)
+		a = append([]string{f}, a...)
+		if d == "" {
+			break
+		}
+		p = d[:len(d)-1]
 	}
-	return Match(name + "/*")
+	return a
+}
+
+func DescendantsOf(name string) FileFilter {
+	return func(file *zip.File) bool {
+		sf := split(file.Name)
+		sp := split(name)
+
+		if len(sf) < len(sp) {
+			return false
+		}
+
+		for i := 0; i < len(sp); i++ {
+			if sf[i] != sp[i] {
+				return false
+			}
+		}
+		return true
+	}
 }
 
 func Match(pattern string) FileFilter {
